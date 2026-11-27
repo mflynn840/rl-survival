@@ -1,0 +1,7 @@
+{
+  "name": "rl-survival-lan-relay",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": { "start": "node server.js" },
+  "engines": { "node": ">=18" }
+}
