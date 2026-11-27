@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace RLSurvival
 {
@@ -20,6 +21,7 @@ namespace RLSurvival
         public Vector3 CorePosition { get { return Core ? Core.position : new Vector3(0,0,10); } }
         public Camera GameCamera { get; private set; }
         public Transform WorldRoot { get; private set; }
+        public int GraphicsPreset { get; private set; }
         public Vector3[] HotelExitPoints { get { return district==null?new Vector3[0]:district.HotelExitPoints; } }
         public void OpenHotelDoor(int index){if(district)district.OpenDoor(index);}
         public void SetPlayerHealth(string id,int health)
@@ -33,14 +35,36 @@ namespace RLSurvival
         {
             WorldRoot=new GameObject("Roadside Motel Survival World").transform;
             WorldRoot.SetParent(transform,false);
-            RenderSettings.ambientLight=new Color(.55f,.56f,.52f);
-            RenderSettings.fog=true;RenderSettings.fogColor=new Color(.49f,.56f,.6f);RenderSettings.fogDensity=.004f;
+            ConfigureAtmosphere();
             district=gameObject.AddComponent<RoadsideMapBuilder>();district.Build(WorldRoot);
-            var light=new GameObject("Late Afternoon Sun").AddComponent<Light>();light.transform.SetParent(WorldRoot,false);light.type=LightType.Directional;light.intensity=1.25f;light.color=new Color(1f,.9f,.76f);light.transform.rotation=Quaternion.Euler(43,-32,0);
+            var light=new GameObject("Late Afternoon Sun").AddComponent<Light>();light.transform.SetParent(WorldRoot,false);light.type=LightType.Directional;light.intensity=1.2f;light.color=VisualStyle.Sun;light.shadows=LightShadows.Soft;light.shadowStrength=.78f;light.transform.rotation=Quaternion.Euler(43,-32,0);
             var core=GameObject.CreatePrimitive(PrimitiveType.Cube);core.name="Crew Core";core.transform.SetParent(WorldRoot,false);core.transform.position=new Vector3(0,.9f,10.25f);core.transform.localScale=new Vector3(1.5f,1.8f,1.5f);Tint(core,new Color(.17f,.68f,.62f));Core=core.transform;
             LocalPlayer=new GameObject("Player Survivor");LocalPlayer.transform.SetParent(WorldRoot,false);LocalPlayer.transform.position=new Vector3(0,0,19f);
             HumanoidModelBuilder.Create(LocalPlayer,HumanoidStyle.Survivor,new Color(.25f,.21f,.17f));
-            GameCamera=new GameObject("District Camera").AddComponent<Camera>();GameCamera.tag="MainCamera";GameCamera.transform.SetParent(WorldRoot,false);GameCamera.fieldOfView=57;GameCamera.nearClipPlane=.1f;GameCamera.farClipPlane=180;GameCamera.backgroundColor=new Color(.48f,.58f,.66f);FollowCamera(1f);
+            GameCamera=new GameObject("District Camera").AddComponent<Camera>();GameCamera.tag="MainCamera";GameCamera.transform.SetParent(WorldRoot,false);GameCamera.fieldOfView=57;GameCamera.nearClipPlane=.1f;GameCamera.farClipPlane=180;GameCamera.backgroundColor=VisualStyle.SkyTop;GameCamera.allowHDR=true;FollowCamera(1f);
+            ApplyGraphics(PlayerPrefs.GetInt("rl-survival-graphics",2));
+        }
+
+        void ConfigureAtmosphere()
+        {
+            RenderSettings.ambientMode=AmbientMode.Trilight;
+            RenderSettings.ambientSkyColor=VisualStyle.SkyTop;
+            RenderSettings.ambientEquatorColor=VisualStyle.SkyHorizon*.62f;
+            RenderSettings.ambientGroundColor=VisualStyle.GroundBounce;
+            RenderSettings.fog=true;RenderSettings.fogColor=VisualStyle.SkyHorizon;RenderSettings.fogDensity=.0032f;
+            var shader=Shader.Find("Skybox/Procedural");
+            if(shader)
+            {
+                var skybox=new Material(shader);skybox.SetColor("_SkyTint",VisualStyle.SkyTop);skybox.SetColor("_GroundColor",VisualStyle.GroundBounce);skybox.SetFloat("_AtmosphereThickness",.7f);skybox.SetFloat("_Exposure",1.18f);RenderSettings.skybox=skybox;
+            }
+            DynamicGI.UpdateEnvironment();
+        }
+
+        public void ApplyGraphics(int preset)
+        {
+            GraphicsPreset=Mathf.Clamp(preset,0,3);VisualStyle.ApplyQuality(GraphicsPreset);
+            if(GameCamera)GameCamera.allowHDR=GraphicsPreset>=2;
+            if(district)district.SetDetailLevel(GraphicsPreset);
         }
 
         public void TickCamera(float deltaTime)

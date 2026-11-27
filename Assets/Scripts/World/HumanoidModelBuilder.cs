@@ -14,6 +14,7 @@ namespace RLSurvival
         float stride;
         float attackUntil;
         bool raider;
+        bool communityCharacter;
         GameObject heldGun;
         static readonly string[] gunModels={"Carbine","Shotgun","Railgun","SMG","GrenadeLauncher","LMG"};
 
@@ -32,9 +33,17 @@ namespace RLSurvival
             float swing = Mathf.Sin(gait) * 34f * stride;
             if(leftLeg)leftLeg.localRotation = Quaternion.Euler(swing, 0f, 0f);
             if(rightLeg)rightLeg.localRotation = Quaternion.Euler(-swing, 0f, 0f);
-            if(leftArm)leftArm.localRotation = Quaternion.Euler((raider?0f:-52f)-swing * .3f, 0f, -5f);
-            if(rightArm)rightArm.localRotation = Quaternion.Euler(Time.time<attackUntil?-105f:(raider?0f:-52f)+swing * .3f, 0f, 5f);
-            rig.localPosition = Vector3.up * (Mathf.Abs(Mathf.Sin(gait * 2f)) * .045f * stride);
+            if(communityCharacter)
+            {
+                if(leftArm)leftArm.localRotation=Quaternion.Euler(-swing*.25f,0,58f+swing*.18f);
+                if(rightArm)rightArm.localRotation=Quaternion.Euler(Time.time<attackUntil?-105f:swing*.25f,0,-58f-swing*.18f);
+            }
+            else
+            {
+                if(leftArm)leftArm.localRotation = Quaternion.Euler((raider?0f:-52f)-swing * .3f, 0f, -5f);
+                if(rightArm)rightArm.localRotation = Quaternion.Euler(Time.time<attackUntil?-105f:(raider?0f:-52f)+swing * .3f, 0f, 5f);
+            }
+            rig.localPosition = Vector3.up * (Mathf.Abs(Mathf.Sin(gait * 2f)) * .045f * stride+Mathf.Sin(Time.time*2f)*.018f);
         }
 
         public void Attack(){attackUntil=Time.time+.36f;}
@@ -71,6 +80,22 @@ namespace RLSurvival
             rig.SetParent(transform, false);
             bool suit = style == HumanoidStyle.SuitedRaider;
             raider=suit;
+            var community=Resources.Load<GameObject>(suit?"Community/KayKit/Barbarian":"Community/KayKit/RogueHooded");
+            if(community)
+            {
+                communityCharacter=true;
+                var instance=Instantiate(community,rig);instance.name=suit?"KayKit Raider":"KayKit Survivor";instance.transform.localPosition=Vector3.zero;instance.transform.localRotation=Quaternion.Euler(0,180,0);instance.transform.localScale=Vector3.one*.96f;
+                ApplyCommunityPalette(instance.transform,suit,jacketTint);
+                leftArm=FindPart(instance.transform,"upperarm.l");rightArm=FindPart(instance.transform,"upperarm.r");
+                leftLeg=FindPart(instance.transform,"upperleg.l");rightLeg=FindPart(instance.transform,"upperleg.r");
+                gunMount=FindPart(instance.transform,"handslot.r");
+                if(!suit)
+                {
+                    if(!gunMount){gunMount=new GameObject("GunMount").transform;gunMount.SetParent(rig,false);gunMount.localPosition=new Vector3(.34f,1.15f,.22f);gunMount.localRotation=Quaternion.Euler(-68,0,0);}
+                    SetWeapon(0);
+                }
+                return;
+            }
             var authored=Resources.Load<GameObject>(suit?"Models/Raider":"Models/Survivor");
             if(authored)
             {
@@ -130,6 +155,20 @@ namespace RLSurvival
             var renderer = part.GetComponent<Renderer>();
             if (renderer) renderer.sharedMaterial = ModelMaterial(color);
             return part;
+        }
+
+        static void ApplyCommunityPalette(Transform character,bool suit,Color accent)
+        {
+            Color skin=new Color(.54f,.31f,.20f),primary=suit?new Color(.09f,.11f,.13f):accent,secondary=suit?accent:new Color(.09f,.13f,.18f),metal=new Color(.18f,.21f,.22f);
+            foreach(var renderer in character.GetComponentsInChildren<Renderer>(true))
+            {
+                string label=renderer.name.ToLowerInvariant();Color color=primary;
+                if(label.Contains("skin")||label.Contains("head")||label.Contains("hand"))color=skin;
+                else if(label.Contains("leg")||label.Contains("belt"))color=secondary;
+                else if(label.Contains("cape")||label.Contains("hat")||label.Contains("hood"))color=suit?new Color(accent.r*.62f,accent.g*.62f,accent.b*.62f):new Color(primary.r*.55f,primary.g*.55f,primary.b*.55f);
+                else if(label.Contains("knife")||label.Contains("shield"))color=metal;
+                renderer.sharedMaterial=ModelMaterial(color);
+            }
         }
 
         static Material ModelMaterial(Color color)

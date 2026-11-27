@@ -33,6 +33,8 @@ namespace RLSurvival
 
         public void Set(int health,int maximum,bool isEnemy)
         {
+            // EditMode construction and pooled objects can call Set before Awake.
+            if(fillRenderer==null)Awake();
             enemy=isEnemy;
             float fraction=Mathf.Clamp01(maximum>0?(float)health/maximum:0f);
             fill.localScale=new Vector3(.86f*fraction,.075f,.014f);

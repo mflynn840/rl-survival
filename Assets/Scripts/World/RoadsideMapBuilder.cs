@@ -19,6 +19,8 @@ namespace RLSurvival
         }
 
         readonly System.Collections.Generic.Dictionary<Color,Material> materials = new System.Collections.Generic.Dictionary<Color,Material>();
+        readonly System.Collections.Generic.List<GameObject> mediumDetail=new System.Collections.Generic.List<GameObject>();
+        readonly System.Collections.Generic.List<GameObject> highDetail=new System.Collections.Generic.List<GameObject>();
         Transform root;
 
         public void Build(Transform parent)
@@ -30,6 +32,18 @@ namespace RLSurvival
             BuildMotel();
             BuildParkingCourt();
             BuildLandscaping();
+            AddMotelLighting();
+        }
+        void AddMotelLighting()
+        {
+            PointLight("Warm motel entrance light",new Vector3(-3f,3.25f,-12.5f),VisualStyle.MotelWarmth,8f,14f);
+            PointLight("Warm motel entrance light",new Vector3(3f,3.25f,-12.5f),VisualStyle.MotelWarmth,8f,14f);
+            PointLight("Paradise sign glow",new Vector3(11.2f,9.5f,-15.2f),VisualStyle.MotelWarmth,16f,24f);
+            for(int x=-10;x<=10;x+=5)PointLight("Porch sconce",new Vector3(x,2.9f,-13.2f),VisualStyle.MotelWarmth,3.2f,5.5f);
+        }
+        void PointLight(string label,Vector3 position,Color color,float intensity,float range)
+        {
+            var light=new GameObject(label).AddComponent<Light>();light.transform.SetParent(root,false);light.transform.localPosition=position;light.type=LightType.Point;light.color=color;light.intensity=intensity;light.range=range;light.shadows=LightShadows.None;
         }
         public void OpenDoor(int index)
         {
@@ -124,21 +138,34 @@ namespace RLSurvival
             for(int x=-36;x<=36;x+=9)
             {
                 if(Mathf.Abs(x)<17)continue;
-                Palm(new Vector3(x,0,-8f));
-                Palm(new Vector3(x+3f,0,3f));
+                Palm(new Vector3(x,0,-8f),x%18==0?"tree_palmTall":"tree_palmBend");
+                Palm(new Vector3(x+3f,0,3f),"tree_palmTall");
             }
             for(int i=-4;i<=4;i++)
             {
-                Tree(new Vector3(-31f+i*2.3f,0,-26f-Mathf.Abs(i)%2*2f));
-                Tree(new Vector3(31f+i*2.3f,0,-23f-Mathf.Abs(i)%2*2f));
-                Tree(new Vector3(-31f+i*2.3f,0,27f));
-                Tree(new Vector3(31f+i*2.3f,0,27f));
+                Tree(new Vector3(-31f+i*2.3f,0,-26f-Mathf.Abs(i)%2*2f),i%2==0?"tree_pineTallA_detailed":"tree_pineRoundB");
+                Tree(new Vector3(31f+i*2.3f,0,-23f-Mathf.Abs(i)%2*2f),i%2==0?"tree_oak":"tree_pineRoundB");
+                Tree(new Vector3(-31f+i*2.3f,0,27f),"tree_oak");
+                Tree(new Vector3(31f+i*2.3f,0,27f),"tree_pineTallA_detailed");
             }
-            for(int i=0;i<15;i++)
+            for(int i=0;i<18;i++)
             {
-                float x=-25f+i*3.5f;
-                Sphere("Motel roadside bush",new Vector3(x,.45f,-6.3f),new Vector3(1.4f,.9f,1.1f),new Color(.23f,.3f,.19f));
+                float x=-29f+i*3.4f;
+                string bush=i%3==0?"plant_bushDetailed":i%3==1?"plant_bushLarge":"plant_bushTriangle";
+                Community(bush,new Vector3(x,0,-6.3f+(i%2)*.7f),Vector3.one*(i%3==1?1.15f:.85f),new Vector3(0,i*29f,0),1);
+                if(i%2==0)Community(i%4==0?"rock_largeA":"rock_smallC",new Vector3(x+.7f,0,-5.4f),Vector3.one*(i%4==0?.75f:.5f),new Vector3(0,i*47f,0),1);
             }
+            for(int i=0;i<42;i++)
+            {
+                float x=-38f+(i*7.1f)%76f,z=i%2==0?-1.7f+(i%5)*1.1f:25.8f+(i%4)*1.4f;
+                Community(i%3==0?"grass_large":i%3==1?"grass_leafsLarge":"flower_yellowA",new Vector3(x,0,z),Vector3.one*(.42f+(i%3)*.08f),new Vector3(0,i*19f,0),2);
+            }
+            for(int i=0;i<16;i++)
+            {
+                float x=-35f+i*4.6f;
+                Community(i%2==0?"fence_simpleLow":"fence_simpleHigh",new Vector3(x,0,29.8f),Vector3.one,new Vector3(0,90,0),1);
+            }
+            Community("log_stack",new Vector3(-11f,0,-8.1f),Vector3.one,new Vector3(0,18,0),1);
         }
 
         void Window(float x,float y,float z)
@@ -168,8 +195,9 @@ namespace RLSurvival
                 Cylinder(car,"Car tire",new Vector3(axle*1.1f,.27f,side*.81f),new Vector3(.28f,.14f,.28f),new Color(.06f,.065f,.06f),new Vector3(90,0,0));
         }
 
-        void Palm(Vector3 position)
+        void Palm(Vector3 position,string asset)
         {
+            if(Community(asset,position,Vector3.one,new Vector3(0,Random.Range(0,360),0),0))return;
             Cylinder(root,"Palm trunk",position+Vector3.up*3.4f,new Vector3(.55f,3.4f,.55f),new Color(.4f,.31f,.2f));
             for(int i=0;i<7;i++)
             {
@@ -179,11 +207,27 @@ namespace RLSurvival
             }
         }
 
-        void Tree(Vector3 position)
+        void Tree(Vector3 position,string asset)
         {
+            if(Community(asset,position,Vector3.one,new Vector3(0,Random.Range(0,360),0),0))return;
             Cylinder(root,"Pine trunk",position+Vector3.up*3f,new Vector3(.75f,3f,.75f),new Color(.27f,.2f,.14f));
             for(int i=0;i<3;i++)
                 Cone("Pine canopy",position+Vector3.up*(3.1f+i*1.55f),new Vector3(5.2f-i*.75f,3.3f,5.2f-i*.75f),new Color(.12f+i*.018f,.22f+i*.018f,.15f));
+        }
+
+        GameObject Community(string asset,Vector3 position,Vector3 scale,Vector3 euler,int detailTier)
+        {
+            var prefab=Resources.Load<GameObject>("Community/KenneyNature/"+asset);if(!prefab)return null;
+            var obj=Instantiate(prefab,root);obj.name="Kenney Nature • "+asset;obj.transform.localPosition=position;obj.transform.localRotation=Quaternion.Euler(euler);obj.transform.localScale=scale;
+            if(detailTier==1)mediumDetail.Add(obj);else if(detailTier>=2)highDetail.Add(obj);
+            return obj;
+        }
+
+        public void SetDetailLevel(int preset)
+        {
+            bool showMedium=preset>=1,showHigh=preset>=2;
+            foreach(var item in mediumDetail)if(item)item.SetActive(showMedium);
+            foreach(var item in highDetail)if(item)item.SetActive(showHigh);
         }
 
         void GableRoof(string label,Vector3 center,float width,float depth,float rise,Color color)
@@ -213,7 +257,22 @@ namespace RLSurvival
         {
             var obj=GameObject.CreatePrimitive(PrimitiveType.Cube);obj.name=label;obj.transform.SetParent(parent,false);obj.transform.localPosition=position;obj.transform.localScale=scale;
             if(rotation.HasValue)obj.transform.localRotation=Quaternion.Euler(rotation.Value);
-            var collider=obj.GetComponent<Collider>();if(collider)Destroy(collider);obj.GetComponent<Renderer>().sharedMaterial=Material(color);return obj;
+            var collider=obj.GetComponent<Collider>();if(collider)Destroy(collider);var renderer=obj.GetComponent<Renderer>();renderer.sharedMaterial=Material(color);ApplyArtTexture(renderer,label);return obj;
+        }
+        static void ApplyArtTexture(Renderer renderer,string label)
+        {
+            string name=null;Vector2 repeat=Vector2.one;
+            switch(label)
+            {
+                case "District ground":name="GroundDirt";repeat=new Vector2(24,18);break;
+                case "Crew build plot":name="GroundGrass";repeat=new Vector2(12,10);break;
+                case "Two lane asphalt road":name="RoadAsphalt";repeat=new Vector2(30,4);break;
+                case "Motel foundation":name="MotelStone";repeat=new Vector2(14,2);break;
+                case "Motel lower floor":case "Motel upper floor":name="MotelPlaster";repeat=new Vector2(14,3);break;
+                case "Motel front porch canopy":case "Upper gallery floor":name="MotelTimber";repeat=new Vector2(14,2);break;
+            }
+            if(string.IsNullOrEmpty(name))return;var texture=Resources.Load<Texture2D>("Art/"+name);if(!texture)return;
+            var material=renderer.material;material.mainTexture=texture;material.mainTextureScale=repeat;material.color=Color.white;
         }
         GameObject Sphere(string label,Vector3 position,Vector3 scale,Color color)
         {
@@ -230,13 +289,13 @@ namespace RLSurvival
         {
             var obj=new GameObject("3D Motel Sign Text");obj.transform.SetParent(root,false);obj.transform.localPosition=position;obj.transform.localRotation=Quaternion.Euler(0,rotationY,0);
             var mesh=obj.AddComponent<TextMesh>();mesh.text=text;mesh.anchor=TextAnchor.MiddleCenter;mesh.alignment=TextAlignment.Center;mesh.fontSize=80;mesh.characterSize=size/Mathf.Max(4f,text.Replace("\n","").Length*.62f);mesh.color=color;
-            mesh.font=Resources.GetBuiltinResource<Font>("Arial.ttf");
+            mesh.font=Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
             var renderer=obj.GetComponent<MeshRenderer>();renderer.sharedMaterial=Material(color);
         }
         void GroundText(string text,Vector3 position,float width,Color color)
         {
             var obj=new GameObject("Road paint text");obj.transform.SetParent(root,false);obj.transform.localPosition=position;obj.transform.localRotation=Quaternion.Euler(-90,0,0);
-            var mesh=obj.AddComponent<TextMesh>();mesh.text=text;mesh.anchor=TextAnchor.MiddleCenter;mesh.alignment=TextAlignment.Center;mesh.fontSize=80;mesh.characterSize=width/Mathf.Max(4f,text.Length*.62f);mesh.font=Resources.GetBuiltinResource<Font>("Arial.ttf");mesh.color=color;
+            var mesh=obj.AddComponent<TextMesh>();mesh.text=text;mesh.anchor=TextAnchor.MiddleCenter;mesh.alignment=TextAlignment.Center;mesh.fontSize=80;mesh.characterSize=width/Mathf.Max(4f,text.Length*.62f);mesh.font=Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");mesh.color=color;
             obj.GetComponent<MeshRenderer>().sharedMaterial=Material(color);
         }
         Material Material(Color color)

@@ -102,6 +102,6 @@ namespace RLSurvival
             }
             var block=obj.AddComponent<FortBlock>();block.Configure(type,health,maxHealth,ProceduralArena.BlockColor(type));blocks.Add(block);return block;
         }
-        static bool WorldPointer(){var point=Input.mousePosition;return point.x>285&&point.y<Screen.height-150;}
+        bool WorldPointer(){var point=Input.mousePosition;float guiY=Screen.height-point.y;var hud=game.GetComponent<SurvivalHud>();if(point.x<=310||point.y>=Screen.height-150||point.x>=Screen.width-150&&guiY<55||hud!=null&&hud.SettingsOpen)return false;return true;}
     }
 }

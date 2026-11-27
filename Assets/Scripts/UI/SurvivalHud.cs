@@ -9,13 +9,52 @@ namespace RLSurvival
         Vector2 modelsScroll;
         int upgradeTab;
         bool trainingStudioOpen;
-        public void Initialize(SurvivalGame owner){game=owner;}
+        bool settingsOpen;
+        public bool SettingsOpen { get { return settingsOpen; } }
+        int selectedResolution;
+        int selectedGraphics;
+        bool selectedVsync;
+        static readonly Vector2Int[] SupportedResolutions={new Vector2Int(1280,720),new Vector2Int(1920,1080),new Vector2Int(2560,1440),new Vector2Int(3840,2160)};
+        public void Initialize(SurvivalGame owner){game=owner;selectedResolution=Mathf.Clamp(PlayerPrefs.GetInt("rl-survival-resolution",1),0,SupportedResolutions.Length-1);selectedGraphics=Mathf.Clamp(PlayerPrefs.GetInt("rl-survival-graphics",2),0,3);selectedVsync=PlayerPrefs.GetInt("rl-survival-vsync",1)==1;}
         void OnGUI()
         {
             if(game==null)return;GUI.skin.label.fontSize=15;GUI.skin.button.fontSize=14;GUI.skin.box.fontSize=14;
-            if(!game.Account.SignedIn){DrawSignIn();return;}
-            if(game.Phase==MatchPhase.Lobby){if(trainingStudioOpen)DrawTrainingStudio();else DrawLobby();return;}
-            DrawMatch();
+            if(GUI.Button(new Rect(Screen.width-144,12,130,34),"⚙ SETTINGS"))settingsOpen=!settingsOpen;
+            if(!game.Account.SignedIn)DrawSignIn();
+            else if(game.Phase==MatchPhase.Lobby){if(trainingStudioOpen)DrawTrainingStudio();else DrawLobby();}
+            else DrawMatch();
+            if(settingsOpen)DrawSettings();
+        }
+        void DrawSettings()
+        {
+            float width=Mathf.Min(470,Screen.width-32),height=Mathf.Min(510,Screen.height-24),x=(Screen.width-width)*.5f,y=(Screen.height-height)*.5f;
+            GUILayout.BeginArea(new Rect(x,y,width,height),GUI.skin.window);GUILayout.Space(12);CenterLabel("DISPLAY & GRAPHICS",25);GUILayout.Space(7);
+            GUILayout.Label(Application.platform==RuntimePlatform.WebGLPlayer?"Choose up to 4K for local builds. Browser rendering follows the size of this tab.":"Choose the game resolution (up to 4K). The setting is saved on this device.");
+            for(int i=0;i<SupportedResolutions.Length;i++)
+            {
+                var resolution=SupportedResolutions[i];string label=resolution.x+" × "+resolution.y+(resolution.x==3840?" · 4K":"");
+                GUI.backgroundColor=selectedResolution==i?new Color(.45f,.7f,.62f):Color.white;
+                if(GUILayout.Button(label,GUILayout.Height(34)))selectedResolution=i;
+            }
+            GUI.backgroundColor=Color.white;GUILayout.Space(8);GUILayout.Label("Graphics quality  •  shadows, foliage, draw distance, anti-aliasing");GUILayout.BeginHorizontal();
+            for(int i=0;i<4;i++){GUI.backgroundColor=selectedGraphics==i?new Color(.36f,.69f,.64f):Color.white;if(GUILayout.Button(VisualStyle.Label(i),GUILayout.Height(32)))selectedGraphics=i;}
+            GUI.backgroundColor=Color.white;GUILayout.EndHorizontal();GUILayout.Label(selectedGraphics<1?"Lean lighting for older laptops.":selectedGraphics<2?"Balanced visuals for most systems.":selectedGraphics<3?"Dense scenery and crisp shadows.":"Maximum foliage, draw distance, and shadow quality.");
+            selectedVsync=GUILayout.Toggle(selectedVsync," VSync (match the display refresh rate)");GUILayout.Space(8);GUILayout.BeginHorizontal();
+            if(GUILayout.Button("Apply",GUILayout.Height(38)))ApplyResolution();
+            if(GUILayout.Button("Close",GUILayout.Height(38)))settingsOpen=false;
+            GUILayout.EndHorizontal();GUILayout.EndArea();
+        }
+        void ApplyResolution()
+        {
+            selectedResolution=Mathf.Clamp(selectedResolution,0,SupportedResolutions.Length-1);
+            var resolution=SupportedResolutions[selectedResolution];
+            // A browser owns the WebGL canvas size. Screen.SetResolution changes
+            // its backing buffer without resizing the tab and can shrink the
+            // rendered viewport, so only apply the selected mode in local builds.
+            if(Application.platform!=RuntimePlatform.WebGLPlayer)Screen.SetResolution(resolution.x,resolution.y,Screen.fullScreen);
+            if(game!=null&&game.Arena!=null)game.Arena.ApplyGraphics(selectedGraphics);
+            QualitySettings.vSyncCount=selectedVsync?1:0;
+            PlayerPrefs.SetInt("rl-survival-resolution",selectedResolution);PlayerPrefs.SetInt("rl-survival-graphics",selectedGraphics);PlayerPrefs.SetInt("rl-survival-vsync",selectedVsync?1:0);PlayerPrefs.Save();
         }
         void DrawSignIn()
         {

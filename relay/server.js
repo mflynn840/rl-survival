@@ -4,7 +4,7 @@ const path = require('node:path');
 const crypto = require('node:crypto');
 
 const port = Number(process.env.PORT || 8787);
-const buildDir = path.resolve(process.env.WEB_BUILD || path.join(__dirname, '..', 'web'));
+const buildDir = path.resolve(process.env.WEB_BUILD || path.join(__dirname, '..', 'Builds', 'WebGL'));
 const accountsFile = path.resolve(process.env.ACCOUNTS_FILE || path.join(__dirname, 'data', 'accounts.json'));
 const accounts = new Map();
 const sessions = new Map();
@@ -164,7 +164,7 @@ const server = http.createServer(async (req,res)=>{
   if(url.pathname==='/')file=path.join(buildDir,'index.html');
   if(!file.startsWith(buildDir+path.sep)&&file!==buildDir)return respond(res,403,'Forbidden','text/plain');
   if(!fs.existsSync(file)||!fs.statSync(file).isFile())file=path.join(buildDir,'index.html');
-  if(!fs.existsSync(file))return respond(res,404,'Build WebGL into web/ and reload. See README.md.','text/plain; charset=utf-8');
+  if(!fs.existsSync(file))return respond(res,404,'Unity WebGL player is missing. Run ./build-webgl.sh, then restart the LAN server.','text/plain; charset=utf-8');
   const ext=path.extname(file),compressed=ext==='.br'||ext==='.gz',sourceExt=compressed?path.extname(file.slice(0,-ext.length)):ext;
   const headers={'Content-Type':mime[sourceExt]||'application/octet-stream','Cache-Control':sourceExt==='.wasm'?'public, max-age=3600':'no-cache'};
   if(compressed){headers['Content-Encoding']=ext==='.br'?'br':'gzip';headers.Vary='Accept-Encoding';}

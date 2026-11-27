@@ -8,11 +8,34 @@ import math
 import bpy
 
 ROOT = Path(__file__).resolve().parents[1]
-WEB = ROOT / "web" / "models"
 UNITY = ROOT / "Assets" / "Resources" / "Models"
 SOURCE = ROOT / "Assets" / "Models"
-for folder in (WEB, UNITY, SOURCE):
+for folder in (UNITY, SOURCE):
     folder.mkdir(parents=True, exist_ok=True)
+ART=ROOT / "Assets" / "Art"
+RUNTIME_ART=ROOT / "Assets" / "Resources" / "Art"
+RUNTIME_ART.mkdir(parents=True,exist_ok=True)
+
+atlas=bpy.data.images.load(str(ART / "blocks.png"),check_existing=True)
+atlas_pixels=list(atlas.pixels)
+def export_tile(name,row,column):
+    width,height=134,119
+    x0,y0=113+column*143,atlas.size[1]-(8+row*125+height)
+    pixels=[]
+    for y in range(y0,y0+height):
+        start=(y*atlas.size[0]+x0)*4
+        pixels.extend(atlas_pixels[start:start+width*4])
+    image=bpy.data.images.new(name,width=width,height=height,alpha=True)
+    image.pixels.foreach_set(pixels)
+    image.filepath_raw=str(RUNTIME_ART/(name+".png"));image.file_format="PNG";image.save()
+    bpy.data.images.remove(image)
+
+for name,row,column in [
+    ("GroundDirt",0,0),("GroundGrass",0,3),("RoadAsphalt",5,7),
+    ("MotelPlaster",2,9),("MotelStone",1,9),("MotelTimber",3,2),
+    ("BlockScrap",3,1),("BlockBrick",2,0),("BlockSteel",4,3),("BlockTitanium",4,7),
+    ("BlockShock",6,4),("BlockConcrete",5,2),("BlockRoof",3,9),("BlockSpikes",4,4),
+]: export_tile(name,row,column)
 
 bpy.ops.object.select_all(action="SELECT")
 bpy.ops.object.delete(use_global=False)
@@ -112,8 +135,8 @@ def character(name, raider):
     body = empty("Body", root)
     jacket = M["suit"] if raider else M["jacket"]
     pants = M["suit"] if raider else M["denim"]
-    cube("torso tailored jacket", (0,1.22,0), (.64,.83,.38), jacket, body, .085)
-    cube("waist", (0,.79,-.005), (.53,.2,.35), jacket, body, .04)
+    sphere("torso tailored jacket", (0,1.22,0), .42, jacket, body, (.86,1,.53), 28)
+    sphere("waist", (0,.79,-.005), .29, jacket, body, (.93,.68,.58), 24)
     sphere("neck", (0,1.72,.02), .13, M["skin"], body, (.8,1,.8))
     sphere("face", (0,1.91,.045), .24, M["skin"], body, (.84,1.09,.81), 24)
     sphere("jaw", (0,1.78,.125), .16, M["skin"], body, (1,.56,.83), 20)
@@ -136,10 +159,10 @@ def character(name, raider):
         for side in (-1,1): cube("jacket pocket", (side*.2,.98,.225), (.19,.1,.022), jacket, body, .01)
     for side, label in ((-1,"Left"),(1,"Right")):
         arm = empty(f"{label}Arm", body, (side*.39,1.54,0))
-        cube(f"{label} sleeve", (side*.075,-.25,.13 if not raider else 0), (.22,.54,.22), jacket, arm, .07)
-        sphere(f"{label} fist", (side*.08,-.55,.28 if not raider else 0), .105, M["skin"], arm, (.8,1,.8))
+        sphere(f"{label} sleeve", (side*.075,-.25,.11 if not raider else 0), .145, jacket, arm, (.86,1.72,.88), 20)
+        sphere(f"{label} fist", (side*.08,-.59,.27 if not raider else 0), .105, M["skin"], arm, (.82,1,.82), 16)
         leg = empty(f"{label}Leg", body, (side*.17,.72,0))
-        cube(f"{label} trouser", (0,-.29,0), (.22,.66,.25), pants, leg, .045)
+        sphere(f"{label} trouser", (0,-.29,0), .15, pants, leg, (.78,2.12,.84), 20)
         cube(f"{label} boot", (0,-.63,.12), (.245,.18,.43), M["boot"], leg, .035)
     if raider:
         weapon = empty("MeleeMount", body, (.5,.98,.32))
@@ -214,6 +237,5 @@ for root in roots:
     bpy.ops.object.select_all(action="DESELECT")
     for obj in children(root): obj.select_set(True)
     bpy.context.view_layer.objects.active=root
-    bpy.ops.export_scene.gltf(filepath=str(WEB / (root.name+".glb")), export_format="GLB", use_selection=True, export_apply=True)
     bpy.ops.export_scene.fbx(filepath=str(UNITY / (root.name+".fbx")), use_selection=True, add_leaf_bones=False, axis_forward="-Z", axis_up="Y")
 print("Exported", len(roots), "model pairs")

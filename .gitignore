@@ -1,3 +1,4 @@
+# Unity generated files and local editor state
 [Ll]ibrary/
 [Tt]emp/
 [Oo]bj/
@@ -5,19 +6,44 @@
 [Bb]uilds/
 [Ll]ogs/
 [Uu]ser[Ss]ettings/
+[Mm]emoryCaptures/
+[Rr]ecordings/
+ProjectSettings/SceneTemplateSettings.json
+sysinfo.txt
+
+# Asset Store import helper (packages themselves remain trackable)
+/Assets/AssetStoreTools*
+
+# IDE and generated project files
 .vs/
+.vscode/
 .idea/
-web/index.html
-web/Build/
-web/TemplateData/
-web/*.loader.js
-web/*.framework.js
-web/*.wasm
-web/*.data
-web/*.symbols.json
-web/*.br
-web/*.gz
-web/*.unityweb
-npm-debug.log*
-relay/data/
+.consulo/
+.gradle/
+ExportedObj/
+*.csproj
+*.sln
+*.suo
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.svd
+
+# Node, Playwright, and test output
 node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+playwright-report/
+test-results/
+blob-report/
+test-results.xml
+
+# Local LAN relay accounts and generated player artifacts
+relay/data/
+
+# OS files
+.DS_Store
+Thumbs.db

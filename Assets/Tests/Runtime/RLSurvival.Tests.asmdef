@@ -1,0 +1,7 @@
+{
+  "name": "RLSurvival.Tests",
+  "rootNamespace": "RLSurvival.Tests",
+  "references": ["RLSurvival.Runtime"],
+  "optionalUnityReferences": ["TestAssemblies"],
+  "autoReferenced": false
+}

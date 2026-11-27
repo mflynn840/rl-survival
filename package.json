@@ -5,13 +5,12 @@
     "start": "node relay/server.js",
     "start:lan": "node relay/server.js",
     "test": "node --test test/lan.integration.test.js",
-    "test:browser": "node --test test/webgame.browser.integration.test.js"
+    "test:clickthrough": "node --test test/unity-webgl.clickthrough.test.js",
+    "test:unity": "unity test . --mode PlayMode",
+    "test:all": "npm test && npm run test:unity && npm run test:clickthrough"
   },
   "engines": {
     "node": ">=18"
-  },
-  "dependencies": {
-    "three": "^0.187.0"
   },
   "devDependencies": {
     "playwright": "^1.65.1"

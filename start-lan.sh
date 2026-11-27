@@ -8,9 +8,9 @@ if [[ -z "$node_bin" ]]; then
   echo "Node.js 18+ is required. On Ubuntu run: sudo apt update && sudo apt install nodejs npm" >&2
   exit 1
 fi
-if [[ ! -d "$repo_dir/node_modules/three" ]]; then
-  echo 'Installing browser dependencies…'
-  (cd "$repo_dir" && npm ci)
+if [[ ! -f "$repo_dir/Builds/WebGL/index.html" ]]; then
+  echo 'Unity WebGL build missing. Run ./build-webgl.sh before starting LAN play.' >&2
+  exit 1
 fi
 
 lan_ip=""
@@ -22,11 +22,11 @@ if [[ -z "$lan_ip" ]]; then
 fi
 
 export PORT="$port"
-export WEB_BUILD="${WEB_BUILD:-$repo_dir/web}"
+export WEB_BUILD="${WEB_BUILD:-$repo_dir/Builds/WebGL}"
 export ACCOUNTS_FILE="${ACCOUNTS_FILE:-$repo_dir/relay/data/accounts.json}"
 mkdir -p "$(dirname -- "$ACCOUNTS_FILE")"
 echo "RL Survival LAN server (WSL)"
-echo "Host browser: http://localhost:$port"
+echo "Unity WebGL game: http://localhost:$port"
 if [[ -n "$lan_ip" ]]; then
   echo "Other PCs:   http://$lan_ip:$port"
 else

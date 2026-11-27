@@ -13,8 +13,11 @@ The original reference images are present in the design conversation, but were n
 
 ## Runtime model source
 
-- `Assets/Scripts/World/RoadsideMapBuilder.cs` builds the motel district, road, parking court, landscape, signs, and crew plot from 3D mesh primitives.
-- `Assets/Scripts/World/HumanoidModelBuilder.cs` builds and animates volumetric survivor and suited-raider rigs.
+- `Assets/Scripts/World/RoadsideMapBuilder.cs` builds the motel district, road, parking court, landscape, signs, and crew plot from 3D mesh primitives, with optional Kenney Nature Kit foliage and set dressing.
+- `Assets/Scripts/World/HumanoidModelBuilder.cs` loads and animates the CC0 KayKit survivor/raider meshes, with an authored volumetric fallback.
 - `Assets/Scripts/World/ProceduralArena.cs` assembles the map, crew core, cast, light, and perspective camera.
+- `Assets/Scripts/World/VisualStyle.cs` owns the warm coastal palette, procedural sky, lighting tiers, shadows, anti-aliasing, and LOD settings.
+- `Assets/Resources/Community/THIRD_PARTY_ASSETS.md` records the free community sources and their licenses.
+- `tools/generate_models.py` exports the Blender character/block models and crops the runtime terrain, motel, road, and block textures from `Assets/Art/blocks.png` into `Assets/Resources/Art/`.
 
 This keeps the Beta 2 project self-contained while leaving the map and character construction behind replaceable builder classes for future authored FBX/GLTF assets.

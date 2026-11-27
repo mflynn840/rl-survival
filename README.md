@@ -1,6 +1,6 @@
 # RL Survival — Beta 2
 
-3D co-op fortress defense with a LAN account/lobby relay. The browser playtest uses Three.js meshes and runs from the relay; the Unity project provides a native Linux player workflow. The arena and actors are created from 3D primitives and meshes.
+3D co-op fortress defense built in Unity. The same Unity scene and C# gameplay run in the browser through Unity WebGL and in the native Linux player. The Node.js LAN relay handles accounts, profiles, and multiplayer messages; it does not implement a second game.
 
 ## Project layout
 
@@ -14,7 +14,7 @@ Assets/Scripts/
   World/         Arena generation and damageable fort blocks
 Assets/Art/      3D reference direction and code-native model documentation
 relay/            LAN HTTP relay, account store, and static WebGL server
-test/             Two-client relay integration test
+test/             Relay integration and Unity browser clickthrough tests
 ```
 
 The Unity runtime has an assembly definition (`RLSurvival.Runtime.asmdef`). `SurvivalGame` is the composition root; match rules, presentation, networking, persistence, AI, and upgrade data live in focused components/classes so new weapons, policies, or rooms can be added without expanding one central script. The current level is a 3D roadside district: the motel is the raider spawn source, the road separates it from the crew's marked build plot, and the player/raider rigs are built from articulated 3D meshes. See [Assets/Art/README.md](Assets/Art/README.md) for the art direction and asset source boundaries.
@@ -60,22 +60,28 @@ This PC's Wi-Fi LAN IP is currently detected from Windows at launch; do not use 
 
 ## Unity Editor and Linux player
 
-Unity CLI 1.1.0, Unity 2022.3.62f1, and Linux Build Support (IL2CPP) are installed inside WSL at `~/Unity/Hub/Editor/2022.3.62f1`.
+Unity CLI 1.1.0, Unity 2022.3.62f1, and Linux Build Support (IL2CPP) are installed inside WSL at `~/Unity/Hub/Editor/2022.3.62f1`. WebGL Build Support is needed for browser hosting.
 
 - Run `./open-unity.sh` to open the project in the WSLg Unity Editor. Run `unity auth login`, then `unity license activate` if prompted; a Unity ID is required to activate the Editor license in WSL.
 - Run `./build-unity.sh` to build `Builds/Linux/RL Survival.x86_64`.
 - Run `./build-unity.sh --run` to build and launch the player.
-- Run `./setup-unity.sh` to reinstall/repair the pinned editor and Linux module if needed.
+- Run `./build-webgl.sh` to build the same Unity scene for browsers at `Builds/WebGL`.
+- Run `./start-lan.sh` after the WebGL build. The relay serves that Unity build to every browser on the LAN.
+- Run `./setup-unity.sh` to reinstall/repair the pinned editor and Linux module if needed. Add WebGL support with `unity editor module add 2022.3.62f1 --module webgl`.
 
-The browser LAN client remains the easiest way to join from the second PC. Unity's WSL build is a native Linux player, not a Windows executable.
+Browser and native clients use the same Unity scene, scripts, art, and relay protocol. Unity's WSL build is a native Linux player, not a Windows executable. The Unity Settings button offers 720p through 4K resolution choices.
 
 Controls: WASD moves, click the plot to place a block, click block faces to build upward or outward, click raiders to fire, 1–3 selects block tiers, and R repairs or buys ammo.
 
-## Integration test
+## Game regression tests
 
-Run `npm test` for relay/protocol integration or `npm run test:browser` for the two-browser 3D game integration. The browser test creates separate Chromium clients, registers independent accounts, joins a lobby, launches the match, starts Wave 1, confirms the 3D canvas and live raiders, and saves [the screenshot](artifacts/wave1-two-browser-clients.png). The relay test uses two distinct local source IPs and covers authentication, lobby/network events, upgrades, model sharing, and profile persistence.
+Run `npm test` for relay/protocol integration (authentication, co-op events, upgrades, model sharing, and saved profiles). Run `npm run test:unity` for Unity PlayMode checks of match setup, difficulty, catalog data, and game phases.
 
-These tests use two clients in this environment. The WSL relay and Windows LAN forwarding need a final second-PC smoke test. The Unity Linux Editor and build module are installed; building is waiting on Unity license activation in WSL.
+For a real browser clickthrough, install Chromium with `npx playwright install chromium`, build WebGL with `./build-webgl.sh`, then run `npm run test:clickthrough`. It opens the Unity build in headless Chromium, selects the 4K and 720p options, creates a temporary account through the LAN relay, starts a solo match, and clicks the build area while checking browser errors. `npm run test:all` runs all three suites; Unity CLI/license and the WebGL build are required.
+
+The display options are persisted on the device. Native builds apply the chosen resolution from 720p through 4K. Browser builds follow the browser tab's size because the browser controls the WebGL canvas dimensions.
+
+The WSL relay integration tests use two simulated clients. A second-PC smoke test is still needed for Windows LAN forwarding.
 
 ## Two-PC smoke test
 
